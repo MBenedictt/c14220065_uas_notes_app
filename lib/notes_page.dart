@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'settings_page.dart';
 import 'add_note_page.dart';
+import 'edit_note_page.dart';
 import 'dart:convert';
 
 class NotesPage extends StatefulWidget {
@@ -28,6 +29,11 @@ class _NotesPageState extends State<NotesPage> {
         notes = List<Map<String, dynamic>>.from(json.decode(stored));
       });
     }
+  }
+
+  Future<void> saveNotes() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('notes', json.encode(notes));
   }
 
   @override
@@ -58,9 +64,40 @@ class _NotesPageState extends State<NotesPage> {
               itemBuilder: (context, index) {
                 final note = notes[index];
                 return ListTile(
-                  title: Text(note['title']),
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(note['date']),
+                      const SizedBox(height: 4),
+                      Text(note['title']),
+                    ],
+                  ),
                   subtitle: Text(note['description']),
-                  trailing: Text(note['date']),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  EditNotePage(note: note, index: index),
+                            ),
+                          ).then((_) => loadNotes());
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          notes.removeAt(index);
+                          saveNotes();
+                          setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
